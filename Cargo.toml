@@ -1,0 +1,20 @@
+[package]
+name = "tropic"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+description = "Max-plus and min-plus algebra with law-tested semiring matrices and closure"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/arclabs561/tropic"
+homepage = "https://docs.rs/tropic"
+documentation = "https://docs.rs/tropic"
+readme = "README.md"
+keywords = ["tropical", "max-plus", "semiring", "shortest-path", "algebra"]
+categories = ["science", "algorithms"]
+include = ["/src", "/README.md", "/CHANGELOG.md", "/LICENSE*"]
+
+[workspace]
+
+[dependencies]
+
+[dev-dependencies]

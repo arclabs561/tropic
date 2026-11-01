@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ClosureError","MatrixError"],"struct":["Matrix","MaxPlus","MinPlus"],"trait":["Tropical"]};

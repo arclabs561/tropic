@@ -1,27 +1,51 @@
 # tropic
 
-Local draft spot. Not a crate yet.
+Max-plus and min-plus algebra with law-tested semiring matrices and closure.
 
-Purpose: tropical and max-plus algebra: max-plus matrices, tropical matrix
-multiply, Kleene star, shortest-path duals, tropical eigenvectors, Hilbert
-metric, and small polytope helpers.
+Tropical algebra replaces `+` with `max` (or `min`) and `×` with `+`. Addition
+becomes idempotent (`a ⊕ a = a`), which is what makes the semiring the natural
+home for longest-path, shortest-path, dynamic-programming and attention-bias
+work.
 
-Crates.io exact-name check with `cargo info tropic`: no crate found on
-2026-06-26.
+```rust
+use tropic::{Matrix, MaxPlus};
 
-First proof: max-plus matrix multiply plus either a shortest-path example or a
-second tropical-attention score example.
+let step = Matrix::from_rows(vec![
+    vec![MaxPlus::from(0.0), MaxPlus::from(1.0), MaxPlus::neg_inf()],
+    vec![MaxPlus::neg_inf(), MaxPlus::from(0.0), MaxPlus::from(2.0)],
+    vec![MaxPlus::neg_inf(), MaxPlus::neg_inf(), MaxPlus::from(0.0)],
+]).unwrap();
 
-Extraction rule: start as the smallest primitive needed by a real example, not
-as a tropical neural-network or algebraic-geometry package.
+// All-pairs path weights: 0 -> 2 is 1 + 2.
+assert_eq!(step.closure().unwrap().get(0, 2), MaxPlus::from(3.0));
+```
 
-Current status: defer. The `ricci` and `hopfield` examples both use max-plus
-path bias, but neither needs general tropical algebra yet. If a third example
-needs reusable max-plus matrix operations independent of score-bias composition,
-revisit this boundary.
+## What it is
 
-Boundary with `attbias`: score-bias composition is not tropical algebra.
-If the only repeated operation is "add max-plus-derived bias before sparsemax
-or attention," keep it in `attbias` or example-local code. `tropic` should only
-exist for reusable max-plus/tropical operations independent of that score-bias
-surface.
+- `Tropical`: the semiring interface (`zero`, `one`, `add`, `mul`) with an
+  explicit divergence predicate, so a closure cannot silently diverge.
+- `MaxPlus` and `MinPlus`: the two carriers, over `f64`. `NaN` is rejected
+  because it has no order and breaks the laws.
+- `Matrix`: dense semiring matrices with `add`, `mul`, `pow` and `closure`.
+  `closure` returns `ClosureError::PositiveCycle` instead of an infinite answer.
+
+## Boundary
+
+This is a primitive, not a tropical-geometry or tropical-neural-network
+package. It does not provide tropical eigenvalues, polytopes, or symbolic
+tropical curves; those arrive only when a consumer needs them.
+
+Score-bias composition is not tropical algebra. If the repeated operation is
+"add a max-plus-derived bias before attention", that belongs with the attention
+code, not here.
+
+## Testing
+
+`just check` runs formatting, Clippy with `-D warnings`, the test suite and
+docs. The tests cover the semiring laws, matrix identity and power, closure
+against hand-computed longest paths, positive-cycle detection, and min-plus
+shortest paths.
+
+## License
+
+MIT OR Apache-2.0.
