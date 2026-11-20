@@ -395,7 +395,14 @@ impl<T: Tropical> Matrix<T> {
     pub fn closure(&self) -> Result<Self, ClosureError> {
         assert_eq!(self.rows, self.cols, "closure needs a square matrix");
         let n = self.rows;
+        // Start from `I ⊕ A`, so the zero-length path from a vertex to itself
+        // is present even when the matrix has no self-loops. Starting from `A`
+        // computes `A ⊕ A² ⊕ ...` instead, which left the diagonal at the
+        // additive identity on acyclic graphs.
         let mut out = self.clone();
+        for i in 0..n {
+            out.set(i, i, out.get(i, i).add(T::one()));
+        }
         for k in 0..n {
             if out.get(k, k).diverges_on_cycle() {
                 return Err(ClosureError::PositiveCycle);
@@ -598,5 +605,28 @@ mod tests {
         let closure = graph.closure().unwrap();
         assert_eq!(closure.get(0, 3), MinPlus::from(3.0));
         assert_eq!(closure.get(3, 0), MinPlus::pos_inf());
+    }
+
+    #[test]
+    fn closure_includes_the_zero_length_self_path() {
+        // A two-vertex DAG with no self-loops.
+        let none = MaxPlus::zero();
+        let dag = Matrix::from_rows(vec![vec![none, MaxPlus(1.0)], vec![none, none]]).unwrap();
+        let closure = dag.closure().unwrap();
+        assert_eq!(closure.get(0, 0), MaxPlus::one());
+        assert_eq!(closure.get(1, 1), MaxPlus::one());
+        assert_eq!(closure.get(0, 1), MaxPlus(1.0));
+        assert_eq!(closure.get(1, 0), none);
+
+        // A self-loop worse than staying put does not replace the empty path.
+        let lossy = Matrix::from_rows(vec![vec![MaxPlus(-1.0)]]).unwrap();
+        assert_eq!(lossy.closure().unwrap().get(0, 0), MaxPlus::one());
+
+        // Min-plus: shortest path from a vertex to itself is 0, not +inf.
+        let inf = MinPlus::zero();
+        let path = Matrix::from_rows(vec![vec![inf, MinPlus(2.0)], vec![inf, inf]]).unwrap();
+        let closure = path.closure().unwrap();
+        assert_eq!(closure.get(0, 0), MinPlus::one());
+        assert_eq!(closure.get(0, 1), MinPlus(2.0));
     }
 }
